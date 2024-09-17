@@ -2,7 +2,7 @@
     "scripts": {
       "start": "node server.js",
       "dev": "nodemon server.js",
-      "email-notifier": "node emailNotifier.js"
+      "email-notifier": "node backend/emailNotifier.js"
     },
     "dependencies": {
       "@aws-sdk/client-lambda": "^3.653.0",
