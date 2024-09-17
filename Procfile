@@ -1,1 +1,1 @@
-worker: node emailNotifier.js
+worker: node backend/emailNotifier.js
