@@ -1,0 +1,227 @@
+.container {
+  position: relative;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+.header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 10px;
+}
+
+.header-logo {
+  width: 50px;
+  height: 50px;
+}
+
+.logo {
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+.chat-logo {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  transition: transform 0.3s ease-in-out;
+  width: 100%;
+}
+
+main.with-sidebar {
+  transform: translateX(-25%);
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #36393f; /* Discord-like background color */
+  color: #dcddde; /* Discord-like text color */
+  transition: right 0.3s ease-in-out;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.open {
+  right: 0;
+}
+
+h1, p {
+  text-align: center;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+}
+
+.cta-button {
+  margin-top: 20px;
+  background-color: black;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.cta-button:hover {
+  background-color: white;
+  color: black;
+}
+
+.chat-simulation {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  scroll-behavior: smooth;
+}
+
+.chat-simulation p {
+  background-color: #40444b;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 5px 0;
+}
+
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  background-color: #40444b; /* Discord-like input background */
+  border-radius: 5px;
+  margin-top: auto;
+}
+
+input[type="text"] {
+  background-color: transparent; /* Use the container's background */
+  color: #dcddde; /* Discord-like input text color */
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+  resize: none; /* Prevent resizing */
+  overflow-wrap: break-word; /* Wrap long text */
+  word-wrap: break-word; /* Wrap long text */
+  height: auto; /* Allow height to adjust */
+}
+
+input[type="text"]::placeholder {
+  color: #72767d; /* Discord-like placeholder color */
+}
+
+.yes-no-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+
+.yes-no-buttons button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+.yes-no-buttons button:hover {
+  background-color: #45a049;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.info-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.info-button:hover {
+  background-color: #45a049;
+}
+
+@media (min-width: 768px) {
+  main.with-sidebar {
+    width: 50%;
+    transform: translateX(0);
+  }
+
+  .sidebar {
+    right: -50%;
+    width: 50%;
+  }
+}
+
+@media (max-width: 767px) {
+  main.with-sidebar {
+    transform: translateX(0);
+    width: 100%;
+  }
+
+  .sidebar {
+    right: -100%;
+    width: 100%;
+  }
+}
+
+/* New styles for animated bullet points */
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+ul li {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+}
+
+ul li::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 10px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, black, white);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
