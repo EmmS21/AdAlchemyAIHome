@@ -69,8 +69,11 @@ async function monitorAndSendEmails() {
           Ad Text Variations:
           ${Array.isArray(judgeData.ad_variations) ? judgeData.ad_variations.join('\n') : 'No ad variations available'}
 
+          If you would like to use AdAlchemyAI to automate your ads, let's schedule some time to chat:
+          https://calendly.com/emmanuel-emmanuelsibanda/30min
+
           Best regards,
-          AdAlchemyAI Team
+          Emmanuel from AdAlchemyAI
         `;
 
         await sendEmail(email, 'AdAlchemyAI: Results to automate your Google Ads', emailContent);
