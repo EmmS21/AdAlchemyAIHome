@@ -50,7 +50,7 @@ function App() {
 
   const formatBotMessage = (content: string) => {
     const parts = content.split(/(\d+\.)/);
-    return parts.map((part, index) => {
+    return parts.map((part) => {
       if (/^\d+\.$/.test(part)) {
         return `<br/><span class="large-number">${part}</span> `;
       }
