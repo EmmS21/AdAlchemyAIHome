@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
-import logo from './assets/adalch.jpg'; // Import the logo
+import logo from './assets/adalch.jpg'; 
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -34,9 +34,9 @@ function App() {
     setIsSidebarOpen(!isSidebarOpen);
   };
   
-  const API_URL = process.env.NODE_ENV === 'production' 
-  ? process.env.REACT_APP_API_URL_PROD 
-  : process.env.REACT_APP_API_URL_DEV;
+  const API_URL = import.meta.env.MODE === 'production' 
+  ? import.meta.env.VITE_API_URL_PROD 
+  : import.meta.env.VITE_API_URL_DEV;
 
   const startSession = async () => {
     setIsLoading(true);
