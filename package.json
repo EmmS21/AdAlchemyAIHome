@@ -5,6 +5,7 @@
         "node": "18.x"
     },
     "scripts": {
-        "start": "node backend/emailNotifier.js"
+        "start": "node backend/emailNotifier.js",
+        "email-notifier": "node backend/emailNotifier.js"
     }
 }
