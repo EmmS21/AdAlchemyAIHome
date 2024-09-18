@@ -38,3 +38,4 @@ __pypackages__/
 
 # Node.js dependencies
 node_modules/
+.vercel
