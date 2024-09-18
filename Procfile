@@ -1,1 +1,2 @@
-worker: node backend/emailNotifier.js
+worker: ./bin/node backend/emailNotifier.js
+scheduler: ./bin/node backend/emailNotifier.js
