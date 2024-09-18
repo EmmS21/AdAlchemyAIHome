@@ -48,6 +48,16 @@ function App() {
   ? import.meta.env.VITE_API_URL_PROD 
   : import.meta.env.VITE_API_URL_DEV;
 
+  const formatBotMessage = (content: string) => {
+    const parts = content.split(/(\d+\.)/);
+    return parts.map((part, index) => {
+      if (/^\d+\.$/.test(part)) {
+        return `<br/><span class="large-number">${part}</span> `;
+      }
+      return part;
+    }).join('');
+  };
+
   const startSession = async () => {
     setIsLoading(true);
     try {
@@ -156,7 +166,11 @@ function App() {
               <p className={message.isBot ? 'bot-message' : 'user-message'}>
                 {message.isBot && <img src={logo} alt="AdAlchemyAI Logo" className="chat-logo" />}
                 <strong>{message.isBot ? 'AdAlchemyAI: ' : 'You: '}</strong>
-                <span dangerouslySetInnerHTML={{ __html: message.content }}></span>
+                {message.isBot && message.content.includes("Our Company Researcher agent") ? (
+                  <span dangerouslySetInnerHTML={{ __html: formatBotMessage(message.content) }} />
+                ) : (
+                  <span dangerouslySetInnerHTML={{ __html: message.content }} />
+                )}
               </p>
               {showYesNo && message.isBot && message.content.includes("Do you consent to this information being sent to you via email") && (
                 <div className="yes-no-buttons">

@@ -268,3 +268,8 @@ ul li::before {
 .faq-item:hover {
   transform: scale(1.05); 
 }
+
+.large-number {
+  font-size: 1.2em;
+  font-weight: bold;
+}
