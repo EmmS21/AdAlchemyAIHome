@@ -1,0 +1,9 @@
+{
+    "name": "AdAlchemyAIHome",
+    "scripts": {
+      "postdeploy": "cd backend && npm install"
+    },
+    "env": {
+      "NODE_ENV": "production"
+    }
+  }
