@@ -88,7 +88,7 @@ async function monitorAndSendEmails() {
           Ad Text Variations:
           ${judgeData.ad_variations.map(variation => `- Headline: ${variation.headlines.join(', ')}\n  Description: ${variation.descriptions.join(', ')}`).join('\n\n')}
 
-          <p>If you would like to use AdAlchemyAI to automate your ads, let's <a href="https://calendly.com/emmanuel-emmanuelsibanda/30min">Schedule Time</a></p>
+          If you would like to use AdAlchemyAI to automate your ads, let's [Schedule Time](https://calendly.com/emmanuel-emmanuelsibanda/30min)
 
           Best regards,
           Emmanuel from AdAlchemyAI
