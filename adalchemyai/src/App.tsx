@@ -28,16 +28,20 @@ function App() {
       return `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`;
     });
   };
-
+  
   const toggleSidebar = (content: 'test' | 'info') => {
     setSidebarContent(content);
     setIsSidebarOpen(!isSidebarOpen);
   };
+  
+  const API_URL = process.env.NODE_ENV === 'production' 
+  ? process.env.REACT_APP_API_URL_PROD 
+  : process.env.REACT_APP_API_URL_DEV;
 
   const startSession = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/startSession', {
+      const response = await fetch(`${API_URL}/startSession`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,7 +66,7 @@ function App() {
     if (!sessionId) return;
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/sendMessage', {
+      const response = await fetch(`${API_URL}/sendMessage`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +80,7 @@ function App() {
           isBot: msg.isBot,
         }));
         setMessages((prevMessages) => [...prevMessages, ...newMessages]);
-        if (newMessages.some(msg => msg.content.includes("Do you consent to this information being sent to you via email"))) {
+        if (newMessages.some((msg: { content: string | string[]; }) => msg.content.includes("Do you consent to this information being sent to you via email"))) {
           setShowYesNo(true);
         } else {
           setShowYesNo(false);
@@ -96,7 +100,7 @@ function App() {
     if (!sessionId) return;
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/endSession', {
+      const response = await fetch(`${API_URL}/endSession`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
