@@ -37,14 +37,13 @@ app.post('/startSession', async (req, res) => {
   try {
     const sessionId = Math.random().toString(36).substring(7);
 
-    // Store session information in MongoDB
+    // Only store session ID and creation time initially
     const db = mongoClient.db('onboarding');
     const sessionsCollection = db.collection('sessions');
     await sessionsCollection.insertOne({
       sessionId,
       createdAt: new Date(),
       currentStep: 0,
-      businessInfo: {}
     });
 
     res.json({ success: true, sessionId, initialMessages: botResponses });
@@ -68,6 +67,7 @@ app.post('/sendMessage', async (req, res) => {
 
     let botReply = '';
     let nextStep = session.currentStep + 1;
+    let businessInfo = session.businessInfo || {};
 
     switch (session.currentStep) {
       case 0:
@@ -77,7 +77,7 @@ app.post('/sendMessage', async (req, res) => {
           botReply = "The business name you provided already exists. Please provide a different business name.";
           nextStep = 0; // Stay on the same step
         } else {
-          session.businessInfo.name = message;
+          businessInfo.name = message;
           botReply = `Please give me a link to your website ${message}:`;
         }
         break;
@@ -93,7 +93,7 @@ app.post('/sendMessage', async (req, res) => {
             botReply = "The website you provided already exists. Please provide a different website.";
             nextStep = 1; // Stay on the same step
           } else if (response.status === 200 && !invalidKeywords.some(keyword => content.includes(keyword))) {
-            session.businessInfo.website = message;
+            businessInfo.website = message;
             botReply = "Could you please provide your email address?";
           } else {
             throw new Error('Website is not valid or is for sale');
@@ -111,7 +111,7 @@ app.post('/sendMessage', async (req, res) => {
             botReply = "The email address you provided already exists. Please provide a different email address.";
             nextStep = 2; // Stay on the same step
           } else {
-            session.businessInfo.email = message;
+            businessInfo.email = message;
             botReply = "Our company researcher will use the information to understand your business and users. Do you consent to this information being sent to you via email (this will be sent to you only once)?";
             nextStep = 3; // Move to the next step for Yes/No response
           }
@@ -132,14 +132,21 @@ Within 10 minutes you will receive an email with:
 5. Variations of Ad Text
 6. A Calendly link if you are interested in learning more about our AI Worker and using our production level bot to help you run and optimize Google Ads`;
 
-          // Update the session document after completing all questions
+          // Only update the session document after completing all questions
           await sessionsCollection.updateOne(
             { sessionId },
-            { $set: { businessInfo: session.businessInfo, currentStep: nextStep, emailSent: false } }
+            { 
+              $set: { 
+                businessInfo: businessInfo,
+                currentStep: nextStep,
+                emailSent: false,
+                onboardingCompleted: true // New field to indicate completion
+              }
+            }
           );
 
           // Trigger the Lambda function
-          await triggerLambdaFunction(session.businessInfo);
+          await triggerLambdaFunction(businessInfo);
         } else {
           botReply = "Thank you for your response. If you change your mind, feel free to start a new session.";
           nextStep = -1; // End of onboarding
@@ -154,15 +161,18 @@ Within 10 minutes you will receive an email with:
         nextStep = -1; // End of onboarding
     }
 
-    await sessionsCollection.updateOne(
-      { sessionId },
-      { 
-        $set: { 
-          currentStep: nextStep,
-          businessInfo: session.businessInfo
+    // Only update the session if it's not the final step
+    if (nextStep !== -1 && nextStep !== 4) {
+      await sessionsCollection.updateOne(
+        { sessionId },
+        { 
+          $set: { 
+            currentStep: nextStep,
+            businessInfo: businessInfo
+          }
         }
-      }
-    );
+      );
+    }
 
     const allMessages = [
       { content: message, isBot: false },
