@@ -37,14 +37,11 @@ app.post('/startSession', async (req, res) => {
   try {
     const sessionId = Math.random().toString(36).substring(7);
 
-    // Only store session ID and creation time initially
-    const db = mongoClient.db('onboarding');
-    const sessionsCollection = db.collection('sessions');
-    await sessionsCollection.insertOne({
-      sessionId,
+    global.sessions = global.sessions || {};
+    global.sessions[sessionId] = {
       createdAt: new Date(),
       currentStep: 0,
-    });
+    };
 
     res.json({ success: true, sessionId, initialMessages: botResponses });
   } catch (error) {
@@ -59,7 +56,7 @@ app.post('/sendMessage', async (req, res) => {
   try {
     const db = mongoClient.db('onboarding');
     const sessionsCollection = db.collection('sessions');
-    const session = await sessionsCollection.findOne({ sessionId });
+    const session = global.sessions[sessionId];
 
     if (!session) {
       return res.status(404).json({ success: false, message: 'Session not found. Please start a new session.' });
@@ -75,7 +72,7 @@ app.post('/sendMessage', async (req, res) => {
         const duplicateBusinessName = await sessionsCollection.findOne({ 'businessInfo.name': message });
         if (duplicateBusinessName) {
           botReply = "The business name you provided already exists. Please provide a different business name.";
-          nextStep = 0; // Stay on the same step
+          nextStep = 0; 
         } else {
           businessInfo.name = message;
           botReply = `Please give me a link to your website ${message}:`;
@@ -133,20 +130,18 @@ Within 10 minutes you will receive an email with:
 6. A Calendly link if you are interested in learning more about our AI Worker and using our production level bot to help you run and optimize Google Ads`;
 
           // Only update the session document after completing all questions
-          await sessionsCollection.updateOne(
-            { sessionId },
-            { 
-              $set: { 
-                businessInfo: businessInfo,
-                currentStep: nextStep,
-                emailSent: false,
-                onboardingCompleted: true // New field to indicate completion
-              }
-            }
-          );
+          await sessionsCollection.insertOne({
+            sessionId,
+            businessInfo,
+            createdAt: session.createdAt,
+            currentStep: nextStep,
+            emailSent: false,
+            onboardingCompleted: true
+          });
 
           // Trigger the Lambda function
           await triggerLambdaFunction(businessInfo);
+          delete global.sessions[sessionId];
         } else {
           botReply = "Thank you for your response. If you change your mind, feel free to start a new session.";
           nextStep = -1; // End of onboarding
@@ -163,15 +158,11 @@ Within 10 minutes you will receive an email with:
 
     // Only update the session if it's not the final step
     if (nextStep !== -1 && nextStep !== 4) {
-      await sessionsCollection.updateOne(
-        { sessionId },
-        { 
-          $set: { 
-            currentStep: nextStep,
-            businessInfo: businessInfo
-          }
-        }
-      );
+      global.sessions[sessionId] = {
+        ...session,
+        currentStep: nextStep,
+        businessInfo
+      };
     }
 
     const allMessages = [
