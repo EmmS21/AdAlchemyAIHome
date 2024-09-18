@@ -34,7 +34,7 @@ function App() {
 
   const parseMessage = (content: string) => {
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-    return content.replace(linkRegex, (match, text, url) => {
+    return content.replace(linkRegex, (_match, text, url) => {
       return `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`;
     });
   };
