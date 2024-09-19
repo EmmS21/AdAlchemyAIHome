@@ -86,7 +86,7 @@ async function monitorAndSendEmails() {
           ${Object.entries(judgeData.keywords).map(([keyword, data]) => `- ${keyword}: ${data.avg_monthly_searches} searches, Competition: ${data.competition}`).join('\n')}
 
           Ad Text Variations:
-          ${judgeData.ad_variations.map(variation => `- Headline: ${variation.headlines.join(', ')}\n  Description: ${variation.descriptions.join(', ')}`).join('\n\n')}
+          ${judgeData.ad_variations.map(variation => `- Headline: ${variation.headline}\n  Description: ${variation.ad_text}`).join('\n\n')}
 
           If you would like to use AdAlchemyAI to automate your ads, let's [Schedule Time](https://calendly.com/emmanuel-emmanuelsibanda/30min)
 
