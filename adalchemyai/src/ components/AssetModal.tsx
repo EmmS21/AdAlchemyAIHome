@@ -106,7 +106,7 @@ const handleSubmit = async () => {
     console.log('All assets uploaded successfully');
   } catch (error) {
     console.error('Error uploading assets:', error);
-    alert(`Failed to upload assets: ${error.message}`);
+    alert(`Failed to upload assets: ${(error as Error).message}`);
   } finally {
     setIsUploading(false); 
     setUploadedFiles([]); 

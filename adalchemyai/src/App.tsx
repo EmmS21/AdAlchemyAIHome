@@ -2046,7 +2046,7 @@ const handleAddPath = async () => {
     value: string
   ) => {
     setEditedAds(prev => {
-      const newAds = [...prev];
+      const newAds = [...(prev as SelectedAd[])];
       if (!newAds[adIndex]) {
         newAds[adIndex] = { ...selectedAds[adIndex] };
       }
@@ -2091,7 +2091,7 @@ const handleAddPath = async () => {
   };
 
   const saveEdit = async (index: number) => {
-    const editedAd = editedAds[index] || selectedAds[index];
+    const editedAd = (editedAds as SelectedAd[])[index] || selectedAds[index];
     if (editedAd) {
       const updatedAd = {
         headlines: Array.isArray(editedAd.headlines?.[0]) 
@@ -2148,9 +2148,9 @@ const handleAddPath = async () => {
   
           setEditingAdIndex(null); // This will close the modal
           setEditedAds(prev => {
-            const newEditedAds = [...prev];
+            const newEditedAds = [...(prev as (SelectedAd | null)[])];
             newEditedAds[index] = null; 
-            return newEditedAds;
+            return newEditedAds as SelectedAd[] | null;
           });
   
         } else {
