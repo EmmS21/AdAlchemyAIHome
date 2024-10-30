@@ -1232,10 +1232,7 @@ const handleAddPath = async () => {
         setIsSidebarOpen(false);
 
         // Clear localStorage
-        localStorage.removeItem('currSessionId');
-        localStorage.removeItem('sessionId');
-        localStorage.removeItem('chatMessages');
-        localStorage.removeItem('currSideBarState');
+        localStorage.clear();
       } else {
         throw new Error(data.message);
 
