@@ -14,6 +14,27 @@ import { AuthContext } from './contexts/AuthContext';
 import { z } from 'zod';
 import { loadStripe } from '@stripe/stripe-js';
 
+interface UserPersona {
+  name: string;
+  description: string;
+}
+
+interface SelectedAd {
+  headlines: string[];
+  descriptions: string[];
+  website?: string;
+  keywords?: string[];
+  related_keywords?: string[];
+  additional_headlines?: string[];
+  additional_descriptions?: string[];
+  currentHeadlineIndex: number;
+  currentDescriptionIndex: number;
+  logo?: string;
+  imageAsset?: string | null;  
+  image?: string | null;  
+}
+
+
 interface AnalysisResult {
   businessName: string;
   marketingData: {
@@ -22,7 +43,7 @@ interface AnalysisResult {
     list_of_ad_text: { headlines: string[]; descriptions: string[] };
     list_of_keywords: string[];
     list_of_paths_taken: string[];
-    user_personas: any[];
+    user_personas: UserPersona[];
     last_update: string;
   };
 }
@@ -30,6 +51,7 @@ interface AnalysisResult {
 interface AdDescription {
   text: string;
   finalized: boolean;
+  new?: boolean;
 }
 
 interface Keyword {
@@ -42,8 +64,8 @@ interface Keyword {
 interface AdHeadline {
   text: string;
   finalized: boolean;
+  new?: boolean;
 }
-
 
 type SidebarContent = 'test' | 'info' | 'authenticated' | 'loggedIn' | 'success' | 'onboarding' | null;
 
@@ -176,17 +198,17 @@ function App() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   
   const [authenticationTimer, setAuthenticationTimer] = useState(0);
-  const [selectedAds, setSelectedAds] = useState<any[]>(() => {
+  const [selectedAds, setSelectedAds] = useState<SelectedAd[]>(() => {
     const savedAds = localStorage.getItem('selectedAds');
     return savedAds ? JSON.parse(savedAds) : [];
   });
     const [googleDoodleUrl, setGoogleDoodleUrl] = useState<string | null>(null);
   const [editingAdIndex, setEditingAdIndex] = useState<number | null>(null);
-  const [editedAds, setEditedAds] = useState<any[]>([]);
+  const [editedAds, setEditedAds] = useState<SelectedAd[]>([]);
   const [approvedAds, setApprovedAds] = useState<Set<number>>(new Set());
   const [adsMarkedForDeletion, setAdsMarkedForDeletion] = useState<Set<number>>(new Set());
-  const [logos, setLogos] = useState<{ [key: number]: string }>({});
-  const [isEditMode, setIsEditMode] = useState<boolean>(false); 
+  const [, setLogos] = useState<{ [key: number]: string }>({});
+  const [, setIsEditMode] = useState<boolean>(false); 
 
   const [showAssetModal, setShowAssetModal] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
@@ -196,10 +218,8 @@ function App() {
 
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [currentBudget, setCurrentBudget] = useState<number | null>(null);
-  const [isLoadingBudget, setIsLoadingBudget] = useState(false);
+  const [, setIsLoadingBudget] = useState(false);
 
-
-  // defiance
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
   const [newCampaignData, setNewCampaignData] = useState({
     campaignName: '',
@@ -207,10 +227,10 @@ function App() {
     startDate: '',
     endDate: ''
   });
-  const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
+  const [, setIsCreatingCampaign] = useState(false);
   const [analysisInProgress, setAnalysisInProgress] = useState(false);
-  const [currentAnalysisStep, setCurrentAnalysisStep] = useState('');
-  const [analysisResultsLoaded, setAnalysisResultsLoaded] = useState(false);
+  const currentAnalysisStep = '';
+  const [, setAnalysisResultsLoaded] = useState(false);
   const [isGeneratingOutput, setIsGeneratingOutput] = useState(false);
 
 const app = initializeApp(firebaseConfig);
@@ -388,7 +408,7 @@ const startAdCreation = async () => {
         clearInterval(timerInterval);
         setIsAuthenticating(false);
 
-        if (authResult.success) {
+        if ((authResult as unknown as { success: boolean }).success) {
           updateAdCreationStep('selectCampaignOption');
         } else {
           updateAdCreationStep('requiresAuth');
@@ -473,7 +493,7 @@ const updateCustomerId = async (customerId: string) => {
     if (response.ok) {
       const data = await response.json();
       if (data.success) {
-        setAlertMessage(''); // Clear the alert message
+        setAlertMessage(''); 
         updateAdCreationStep('selectCampaignOption');
         localStorage.setItem('step', 'selectCampaignOption');
       } else {
@@ -637,7 +657,6 @@ useEffect(() => {
 const handleCampaignSelect = async (campaign: { id: string, name: string }) => {
   setSelectedCampaign(campaign);
   localStorage.setItem('selectedCampaign', JSON.stringify(campaign));
-  // const numberOfAds = prompt("How many ads do you want to create?");
   setIsCreatingAds(true);
   try {
     await createAds(1);
@@ -647,8 +666,17 @@ const handleCampaignSelect = async (campaign: { id: string, name: string }) => {
 };
 
 
-const handleAdSelectorResponse = (data: any) => {
-  const adsWithWebsite = data.selected_ads.map((ad: any) => ({
+const handleAdSelectorResponse = (data: { 
+  selected_ads: Array<{ 
+    headlines: string[],
+    descriptions: string[],
+    keywords?: string[],
+    additional_headlines?: string[],
+    additional_descriptions?: string[]
+  }>, 
+  website: string 
+}) => {
+  const adsWithWebsite = data.selected_ads.map(ad => ({
     ...ad,
     website: data.website,
     keywords: ad.keywords || [], // Ensure keywords are included
@@ -863,7 +891,6 @@ const handleAddPath = async () => {
       return `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`;
     });
   };
-
   
   const toggleSidebar = (content: 'test' | 'info' | 'onboarding' | 'authenticated' | 'loggedIn' | null) => {
     let newIsOpen = true
@@ -952,10 +979,6 @@ const handleAddPath = async () => {
     return () => clearInterval(timer);
   }, [analysisStarted, remainingTime]);
 
-  // useEffect(() => {
-  //   localStorage.setItem('showLoginButton', showLoginButton.toString());
-  // }, [showLoginButton]);
-
   useEffect(() => {
     let stepInterval: NodeJS.Timeout;
     if (analysisStarted) {
@@ -984,7 +1007,6 @@ const handleAddPath = async () => {
         case 'analysisInProgress':
           setCurrentThinkingStep(data.message);
           setAnalysisStarted(true);
-          // Poll again after a delay
           setTimeout(checkAnalysisStatus, 5000);
           break;
         case 'noActiveAnalysis':
@@ -1155,7 +1177,7 @@ const handleAddPath = async () => {
           business: data.marketingData.business,
           date_written: data.marketingData.date_written,
           list_of_ad_text: data.marketingData.list_of_ad_text,
-          list_of_keywords: data.marketingData.list_of_keywords, // Ensure this matches the Keyword interface
+          list_of_keywords: data.marketingData.list_of_keywords, 
           list_of_paths_taken: data.marketingData.list_of_paths_taken,
           user_personas: data.marketingData.user_personas,
           last_update: data.marketingData.last_update || new Date().toISOString(),
@@ -1273,7 +1295,7 @@ const handleAddPath = async () => {
     // Update the handleGenerateNewOutput function
     const handleGenerateNewOutput = async () => {
       if (window.confirm("For AdAlchemyAI to generate more personalized output, make sure you select keywords and edit and finalize ad text to help AI learn about your preferences")) {
-        setIsGeneratingOutput(true); // Start loading
+        setIsGeneratingOutput(true); 
         try {
           const storedAnalysis = localStorage.getItem('Analysis');
           if (!storedAnalysis) {
@@ -1305,12 +1327,12 @@ const handleAddPath = async () => {
               // Merge existing keywords with new ones, preserving "new" labels
               list_of_keywords: [
                 // Remove "new" flag from existing keywords
-                ...parsedAnalysis.marketingData.list_of_keywords.map(k => ({
+                ...parsedAnalysis.marketingData.list_of_keywords.map((k: Keyword) => ({
                   ...k,
                   new: undefined
                 })),
                 // Add new keywords with "new" flag
-                ...result.data.list_of_keywords.map(k => ({
+                ...result.data.list_of_keywords.map((k: Keyword) => ({
                   ...k,
                   new: true
                 }))
@@ -1319,22 +1341,22 @@ const handleAddPath = async () => {
               list_of_ad_text: {
                 headlines: [
                   // Remove "new" flag from existing headlines
-                  ...parsedAnalysis.marketingData.list_of_ad_text.headlines.map(h => 
+                  ...parsedAnalysis.marketingData.list_of_ad_text.headlines.map((h: AdHeadline) => 
                     typeof h === 'string' ? h : { ...h, new: undefined }
                   ),
                   // Add new headlines with "new" flag
-                  ...result.data.list_of_ad_text.headlines.map(h => ({
+                  ...result.data.list_of_ad_text.headlines.map((h: AdHeadline) => ({
                     text: typeof h === 'string' ? h : h.text,
                     new: true
                   }))
                 ],
                 descriptions: [
                   // Remove "new" flag from existing descriptions
-                  ...parsedAnalysis.marketingData.list_of_ad_text.descriptions.map(d => 
+                  ...parsedAnalysis.marketingData.list_of_ad_text.descriptions.map((d: AdDescription)=> 
                     typeof d === 'string' ? d : { ...d, new: undefined }
                   ),
                   // Add new descriptions with "new" flag
-                  ...result.data.list_of_ad_text.descriptions.map(d => ({
+                  ...result.data.list_of_ad_text.descriptions.map((d: AdDescription) => ({
                     text: typeof d === 'string' ? d : d.text,
                     new: true
                   }))
@@ -1477,7 +1499,7 @@ const handleAddPath = async () => {
         headlines: adVariations.headlines,
         descriptions: adVariations.descriptions
       };
-      const isFinalized = currentVariation.finalized; 
+      const isFinalized = (currentVariation as unknown as { finalized: boolean }).finalized;
 
       const isAnyLimitExceeded = editedHeadlines.some(headline => headline && headline.length > HEADLINE_CHAR_LIMIT) ||
       editedDescriptions.some(description => description && description.length > DESCRIPTION_CHAR_LIMIT);
@@ -1535,11 +1557,13 @@ const handleAddPath = async () => {
     
             const newListOfAdText = { ...prevResults.marketingData.list_of_ad_text };
     
-            changedHeadlines.forEach(({ index, value }) => {
+            changedHeadlines.forEach((change) => {
+              const {index, value} = change as {index: number, value: string};
               newListOfAdText.headlines[index] = value;
             });
     
-            changedDescriptions.forEach(({ index, value }) => {
+            changedDescriptions.forEach((change) => {
+              const {index, value} = change as {index: number, value: string};
               newListOfAdText.descriptions[index] = value;
             });
     
@@ -1627,7 +1651,7 @@ const handleAddPath = async () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            businessName: analysisResults.businessName,
+            businessName: analysisResults?.businessName,
             type,
             index
           }),
@@ -1642,9 +1666,12 @@ const handleAddPath = async () => {
         if (data.success) {
           // Only update the local state if the server request was successful
           setAnalysisResults(prevResults => {
+            if (!prevResults) return null;
             const newAdVariations = { ...prevResults.marketingData.list_of_ad_text };
             const itemArray = newAdVariations[`${type}s`];
-            itemArray[index] = { text: itemArray[index].text || itemArray[index], finalized: true };
+            itemArray[index] = typeof itemArray[index] === 'string' 
+              ? itemArray[index] 
+              : (itemArray[index] as { text: string }).text;
             return {
               ...prevResults,
               marketingData: {
@@ -1679,7 +1706,7 @@ const handleAddPath = async () => {
         <div className="embed-content">
           <div className="scrollable-content">
             <h4>Headlines:</h4>
-            {currentVariation.headlines.map((headline: string | AdHeadline, index) => {
+            {currentVariation.headlines.map((headline: string | AdHeadline, index: number) => {
               const headlineText = typeof headline === 'object' ? headline.text : headline;
               const currentLength = (editedHeadlines[index] || headlineText).length;
               const isExceeded = currentLength > HEADLINE_CHAR_LIMIT;
@@ -1699,7 +1726,7 @@ const handleAddPath = async () => {
                       onChange={(e) => handleHeadlineChange(index, e.target.value)}
                       className={`embed-input ${isExceeded ? 'exceed-limit' : ''}`}
                     />
-                    {isNew && <span className="new-label">NEW</span>}
+                    {isNew && <span className="new-label"> - NEW</span>}
                   </div>
                   <div className="ad-variation-controls">
                     {(typeof headline === 'object' && 'finalized' in headline) && 
@@ -1717,7 +1744,7 @@ const handleAddPath = async () => {
               );
             })}
             <h4>Descriptions:</h4>
-            {currentVariation.descriptions.map((description: string | AdDescription, index) => {
+            {currentVariation.descriptions.map((description: string | AdDescription, index: number) => {
               const descriptionText = typeof description === 'object' ? description.text : description;
               const currentLength = (editedDescriptions[index] || descriptionText).length;
               const isExceeded = currentLength > DESCRIPTION_CHAR_LIMIT;
@@ -1736,7 +1763,7 @@ const handleAddPath = async () => {
                       onChange={(e) => handleDescriptionChange(index, e.target.value)}
                       className={`embed-textarea ${isExceeded ? 'exceed-limit' : ''}`}
                     />
-                    {isNew && <span className="new-label">NEW</span>}
+                    {isNew && <span className="new-label"> - NEW</span>}
                   </div>
                   <div className="ad-variation-controls">
                     {(typeof description === 'object' && 'finalized' in description) && 
@@ -1764,8 +1791,6 @@ const handleAddPath = async () => {
       </div>
     );
   };
-
-  
 
   const renderKeywords = () => {
     if (!analysisResults) return null;    
@@ -1795,7 +1820,6 @@ const handleAddPath = async () => {
     }
   };
 
-  
     const handleSubmitKeywords = async () => {
       try {
         const response = await fetch(`${API_URL}/submitKeywords`, {
@@ -1820,7 +1844,7 @@ const handleAddPath = async () => {
               ...prevResults,
               marketingData: {
                 ...prevResults.marketingData,
-                list_of_keywords: Array.from(selectedKeywords), // Update with only selected keywords
+                list_of_keywords: Array.from(selectedKeywords),
               },
             };
           });
@@ -2010,7 +2034,12 @@ const handleAddPath = async () => {
     );
   };
 
-  const handleEditChange = (adIndex: number, field: string, subIndex: number, value: string) => {
+  const handleEditChange = (
+    adIndex: number, 
+    field: 'headlines' | 'descriptions' | 'website', 
+    subIndex: number, 
+    value: string
+  ) => {
     setEditedAds(prev => {
       const newAds = [...prev];
       if (!newAds[adIndex]) {
@@ -2749,7 +2778,7 @@ const handleAddPath = async () => {
                         <button onClick={() => cycleHeadline(index, -1)} className="cycle-button">←</button>
                         {ad.currentHeadlineIndex < ad.headlines.length 
                           ? ad.headlines[ad.currentHeadlineIndex] 
-                          : ad.additional_headlines.flat()[ad.currentHeadlineIndex - ad.headlines.length]}
+                          : ad.additional_headlines?.flat()[ad.currentHeadlineIndex - ad.headlines.length]}
                         <button onClick={() => cycleHeadline(index, 1)} className="cycle-button">→</button>
                       </div>
                       <div className="ad-url">{ad.website || ''}</div>
@@ -2757,12 +2786,12 @@ const handleAddPath = async () => {
                       <button onClick={() => cycleDescription(index, -1)} className="cycle-button">←</button>
                       {ad.currentDescriptionIndex < ad.descriptions.length 
                         ? ad.descriptions[ad.currentDescriptionIndex] 
-                        : ad.additional_descriptions.flat()[ad.currentDescriptionIndex - ad.descriptions.length]}
+                        : ad.additional_descriptions?.flat()[ad.currentDescriptionIndex - ad.descriptions.length]}
                       <button onClick={() => cycleDescription(index, 1)} className="cycle-button">→</button>
                     </div>
                     </div>
                   )}
-                  {editingAdIndex !== index && (  // Ensure hover controls are not displayed in edit mode
+                  {editingAdIndex !== index && (  
                   <div className="ad-hover-controls">
                     <button onClick={() => { toggleEditAdIndex(index); setIsEditMode(true); }} className="edit-button">Edit</button>
                     <div className="ad-decision-buttons">
@@ -3057,7 +3086,7 @@ This output will be sent to you via email in about 5-10 minutes. You can view th
         <LogoAssetsModal
           show={showLogoAssetsModal}
           onClose={() => setShowLogoAssetsModal(false)}
-          assets={logoAssets}
+          assets={logoAssets.map(url => ({ url }))}
           onSelect={handleSelectLogo}
         />
         <EditBudgetModal
