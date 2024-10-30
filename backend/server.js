@@ -52,7 +52,7 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://adalchemyai.com'], // Add your frontend URL
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://www.adalchemyai.com'], // Add your frontend URL
   credentials: true
 }));
 
