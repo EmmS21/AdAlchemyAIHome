@@ -29,7 +29,7 @@ interface SelectedAd {
   additional_descriptions?: string[];
   currentHeadlineIndex: number;
   currentDescriptionIndex: number;
-  logo?: string;
+  logo?: string | null;
   imageAsset?: string | null;  
   image?: string | null;  
 }
@@ -75,6 +75,7 @@ type AdCreationStep =
   | 'requiresAuth'
   | 'authenticating'
   | 'selectCampaignOption'
+  | 'loadingCampaigns'
   | 'selectExistingCampaign'
   | 'createNewCampaign'
   | 'displaySelectedAds'
@@ -204,7 +205,7 @@ function App() {
   });
     const [googleDoodleUrl, setGoogleDoodleUrl] = useState<string | null>(null);
   const [editingAdIndex, setEditingAdIndex] = useState<number | null>(null);
-  const [editedAds, setEditedAds] = useState<SelectedAd[]>([]);
+  const [editedAds, setEditedAds] = useState<SelectedAd[] | null>([]);
   const [approvedAds, setApprovedAds] = useState<Set<number>>(new Set());
   const [adsMarkedForDeletion, setAdsMarkedForDeletion] = useState<Set<number>>(new Set());
   const [, setLogos] = useState<{ [key: number]: string }>({});
@@ -218,7 +219,7 @@ function App() {
 
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [currentBudget, setCurrentBudget] = useState<number | null>(null);
-  const [, setIsLoadingBudget] = useState(false);
+  // const [, setIsLoadingBudget] = useState(false);
 
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
   const [newCampaignData, setNewCampaignData] = useState({
@@ -1276,8 +1277,12 @@ const handleAddPath = async () => {
       { key: 'user_personas', label: 'User Personas' },
     ];
 
-    const finalizedHeadlines = currentAnalysis.marketingData.list_of_ad_text.headlines.filter(h => h.finalized).length;
-    const finalizedDescriptions = currentAnalysis.marketingData.list_of_ad_text.descriptions.filter(d => d.finalized).length;
+    const finalizedHeadlines = currentAnalysis.marketingData.list_of_ad_text.headlines.filter((h: AdHeadline | string) => 
+      typeof h === 'object' && 'finalized' in h && h.finalized
+    ).length;
+    const finalizedDescriptions = currentAnalysis.marketingData.list_of_ad_text.descriptions.filter((d: AdDescription | string) => 
+      typeof d === 'object' && 'finalized' in d && d.finalized
+    ).length;
     const canProceed = finalizedHeadlines >= 3 && finalizedDescriptions >= 2;
 
     const handleCreateAdClick = () => {
@@ -1631,7 +1636,7 @@ const handleAddPath = async () => {
           const storedAnalysis = JSON.parse(localStorage.getItem('Analysis') || '{}');
           if (storedAnalysis.marketingData && storedAnalysis.marketingData.list_of_ad_text) {
             storedAnalysis.marketingData.list_of_ad_text[`${type}s`] = 
-              storedAnalysis.marketingData.list_of_ad_text[`${type}s`].filter((_, i) => i !== index);
+              storedAnalysis.marketingData.list_of_ad_text[`${type}s`].filter((_: unknown, i: number) => i !== index);
             localStorage.setItem('Analysis', JSON.stringify(storedAnalysis));
           }
   
@@ -2133,7 +2138,10 @@ const handleAddPath = async () => {
           // Update state and localStorage
           setSelectedAds(prev => {
             const newAds = [...prev];
-            newAds[index] = updatedAd;
+            newAds[index] = {
+              ...updatedAd,
+              logo: updatedAd.logo || undefined  
+            } as SelectedAd;
             localStorage.setItem('selectedAds', JSON.stringify(newAds)); 
             return newAds;
           });
@@ -2236,7 +2244,12 @@ const handleAddPath = async () => {
     }
   };
 
-  const createGoogleAds = async (approvedAds: Set<number>, selectedAds: any[], campaignName: string, parsedAnalysis: any[]) => {
+  const createGoogleAds = async (
+    approvedAds: Set<number>, 
+    selectedAds: SelectedAd[], 
+    campaignName: string, 
+    parsedAnalysis: { businessName: string }
+  ) => {
     setCreateAdSpinner(true);
     try {
       // Filter out only the approved ads
@@ -2304,7 +2317,7 @@ const handleAddPath = async () => {
     }
   };
 
-  const handleAddPhoto = async (index: number) => {
+  const handleAddPhoto = async () => {
     try {
       // Retrieve the selected campaign from localStorage
       const storedCampaign = localStorage.getItem('selectedCampaign');
@@ -2333,6 +2346,7 @@ const handleAddPath = async () => {
   };
 
   const handleSelectLogo = (asset: string) => {
+    if (editingAdIndex === null) return;  
     const newAds = [...selectedAds];
     newAds[editingAdIndex] = {
       ...newAds[editingAdIndex],
@@ -2357,40 +2371,41 @@ const handleAddPath = async () => {
     console.log('showBudgetModal updated:', showBudgetModal);
   }, [showBudgetModal]);
 
-  const handleEditBudget = async () => {
-    const storedCampaign = localStorage.getItem('selectedCampaign');
-    const campaignName = storedCampaign ? JSON.parse(storedCampaign).name : 'Default Campaign Name';
+  // const handleEditBudget = async () => {
+  //   const storedCampaign = localStorage.getItem('selectedCampaign');
+  //   const campaignName = storedCampaign ? JSON.parse(storedCampaign).name : 'Default Campaign Name';
 
-    if (!campaignName) {
-      console.error('No campaign selected');
-      return;
-    }
-    setIsLoadingBudget(true);
-    try {
-      const response = await fetch(`${API_URL}/getCampaignBudget`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          businessName,
-          campaignName: campaignName 
-        }),
-      });
+  //   if (!campaignName) {
+  //     console.error('No campaign selected');
+  //     return;
+  //   }
+  //   setIsLoadingBudget(true);
+  //   try {
+  //     const response = await fetch(`${API_URL}/getCampaignBudget`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({ 
+  //         businessName,
+  //         campaignName: campaignName 
+  //       }),
+  //     });
 
-      if (!response.ok) throw new Error('Failed to fetch campaign budget');
+  //     if (!response.ok) throw new Error('Failed to fetch campaign budget');
       
-      const data = await response.json();
-      if (data.success) {
-        setCurrentBudget(data.budget);
-        setShowBudgetModal(true);
-      }
-    } catch (error) {
-      console.error('Error fetching campaign budget:', error);
-    } finally {
-      setIsLoadingBudget(false)
-    }
-  };
+  //     const data = await response.json();
+  //     if (data.success) {
+  //       setCurrentBudget(data.budget);
+  //       setShowBudgetModal(true);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching campaign budget:', error);
+  //   } finally {
+  //     setIsLoadingBudget(false)
+  //   }
+  // };
+
   const renderLogoGrid = () => {
     if (!showLogoGrid) return null;
   
@@ -2724,8 +2739,8 @@ const handleAddPath = async () => {
                         <button onClick={() => cycleEditableHeadline(index, -1)} className="cycle-button">←</button>
                         <input
                           type="text"
-                          value={editedAds[index]?.headlines?.[editedAds[index]?.currentHeadlineIndex || 0] || ad.headlines?.[ad.currentHeadlineIndex || 0] || ''}
-                          onChange={(e) => handleEditChange(index, 'headlines', editedAds[index]?.currentHeadlineIndex || 0, e.target.value)}                  
+                          value={(editedAds as SelectedAd[])[index]?.headlines?.[(editedAds as SelectedAd[])[index]?.currentHeadlineIndex || 0] || ad.headlines?.[ad.currentHeadlineIndex || 0] || ''}
+                          onChange={(e) => handleEditChange(index, 'headlines', (editedAds as SelectedAd[])[index]?.currentHeadlineIndex || 0, e.target.value)}                 
                           className="embed-input"
                           style={{ color: 'black', backgroundColor: 'grey'}}
                         />
@@ -2733,7 +2748,7 @@ const handleAddPath = async () => {
                       </div>
                       <input
                         type="text"
-                        value={editedAds[index]?.website || ad.website || ''}
+                        value={(editedAds as SelectedAd[])[index]?.website || ad.website || ''}
                         onChange={(e) => handleEditChange(index, 'website', 0, e.target.value)}                  
                         className="embed-input"
                         style={{ color: 'black', backgroundColor: 'grey'}}
@@ -2741,8 +2756,8 @@ const handleAddPath = async () => {
                       <div className="editable-field">
                         <button onClick={() => cycleEditableDescription(index, -1)} className="cycle-button">←</button>
                         <textarea
-                          value={editedAds[index]?.descriptions?.[editedAds[index]?.currentDescriptionIndex || 0] || ad.descriptions?.[ad.currentDescriptionIndex || 0] || ''}
-                          onChange={(e) => handleEditChange(index, 'descriptions', editedAds[index]?.currentDescriptionIndex || 0, e.target.value)}
+                          value={(editedAds as SelectedAd[])[index]?.descriptions?.[(editedAds as SelectedAd[])[index]?.currentDescriptionIndex || 0] || ad.descriptions?.[ad.currentDescriptionIndex || 0] || ''}
+                          onChange={(e) => handleEditChange(index, 'descriptions', (editedAds as SelectedAd[])[index]?.currentDescriptionIndex || 0, e.target.value)}
                           className="embed-textarea"
                         />
                         <button onClick={() => cycleEditableDescription(index, 1)} className="cycle-button">→</button>
@@ -2755,7 +2770,7 @@ const handleAddPath = async () => {
                               <button onClick={() => handleRemoveLogo(index)} className="remove-logo-button">x</button>
                             </div>
                           ) : (
-                            <button onClick={() => handleAddPhoto(index)} className="asset-button photo-button">
+                            <button onClick={() => handleAddPhoto()} className="asset-button photo-button">
                               +
                             </button>
                           )}
