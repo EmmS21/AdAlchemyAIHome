@@ -80,6 +80,10 @@ type AdCreationStep =
   | 'createNewCampaign'
   | 'displaySelectedAds'
   | 'error';
+
+console.log('Environment:', import.meta.env.MODE);
+console.log('Firebase API Key exists:', !!import.meta.env.VITE_FIREBASE_API_KEY);
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
