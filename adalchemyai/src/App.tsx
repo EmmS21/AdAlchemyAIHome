@@ -2497,7 +2497,7 @@ const handleAddPath = async () => {
 
   const cycleEditableHeadline = (adIndex: number, direction: number) => {
     setEditedAds(prev => {
-      const newAds = [...prev];
+      const newAds = [...(prev as SelectedAd[])];
       if (!newAds[adIndex]) {
         newAds[adIndex] = { ...selectedAds[adIndex], currentHeadlineIndex: 0 };
       }
@@ -2510,7 +2510,7 @@ const handleAddPath = async () => {
   
   const cycleEditableDescription = (adIndex: number, direction: number) => {
     setEditedAds(prev => {
-      const newAds = [...prev];
+      const newAds = [...(prev as SelectedAd[])];
       if (!newAds[adIndex]) {
         newAds[adIndex] = { ...selectedAds[adIndex], currentDescriptionIndex: 0 };
       }
